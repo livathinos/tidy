@@ -1,16 +1,10 @@
 <?php
 	/**
-	* @package   Pack Framework
-	* @version   0.0 Alpha
+	* @package   Tidy Framework
+	* @version   0.1 alpha
 	* @author    Spyros Livathinos
 	* @copyright Copyright (C) 2011 Spyros Livathinos. All rights reserved.
 	* @license   http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 only
-	*  
-	* Pack Framework is a Joomla 1.6 frontend development framework which
-	* simplifies a two tier development architecture (local and remote).
-	* It is based on the Rumi Framework by Van De Nito (van@denito.com)
-	*
-	* Pack uses following functions for its two environments
 	* 
 	* ------------------------------------------------------
 	* LOCAL				SHARED				REMOTE	
@@ -22,24 +16,6 @@
 	*					_header()
 	*					_generateOfflince()
 	* 					_sysmsg()
-	*
-	* USAGE
-	* ==========================================================================
-	* On the index page of the template (joomladir/templates/tempname/index.php)
-	* following initializations are required:
-	* 
-	* Require the inclusion of the framework file.
-	* <?php require_once JPATH_SITE . DS . "templates" . DS . $this->template . DS . "libs" . DS . "pack.framework.php"; ?>
-	*
-	* Initialize a new instance of the packBuilder class:
-	* <?php $packer = new packBuilder($this); ?>
-	*
-	* In the header section of the template file, generate the relevant HTML code
-	* 
-	* <head>
-	* <?php $packer->genHeader();
-	* 		$packer->genJS(); ?>
-	* </head>
 	*
 	*/ 
 
