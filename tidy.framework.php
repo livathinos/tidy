@@ -30,6 +30,10 @@
 	*/
 	class packBuilder{
 		var $container	= null;
+		var $local_css 	= null;
+		var $remote_css = null;
+		var $local_js 	= null;
+		var $remote_js	= null;
 		
 		/**
 		 * Initializes important variables, creates the application instance
@@ -45,10 +49,41 @@
 				$this->doc		= &JFactory::getDocument();
 				$this->menu		= &JSite::getMenu();
 				$this->page = (!empty($page)) ? $page : "";
-				$this->container->typo = "typography";
-				$this->container->sysmsg = 0;
+				
 				// Set the Joomla generator tag to null
 				$this->doc->setGenerator(null);
+				
+				/* Set the local CSS file array */
+				$this->local_css = array(
+								'reset',
+								'grid',
+								'typography',
+								'template',
+							 );
+				
+				/* Set the remote CSS file array. If this is left blank,
+				   the same files used for local development will be used
+				   on the remote server as well.*/
+				$this->remote_css = array(
+							  	'pack.min'
+							  );
+							
+				/* Set the local Javascript file array */
+				$this->local_js = array(
+								'mootools-core',
+								'mootools-more',
+								'jquery-1.4.2.min',
+								'sysmsgfly',
+								'script'
+							);
+				
+				/* Set the remote Javascript file array. If this is left blank,
+				   the same files used for local development will be used on the 
+				   remote server as well. */
+				$this->remote_js = array(
+								'plugins.min',
+								'script.min'
+							 );
 				
 				// Initialize the container parameters
 				$browser							= new JBrowser;
@@ -93,7 +128,9 @@
 		}
 		
 		/**
-		* Parse Javascript Declaration
+		* Parses inline Javascript code given a string.
+		* @param string $url
+		* @return string $script
 		*/
 		function parseJSDeclaration($declaration){
 			$script	= '
@@ -124,47 +161,9 @@
 		function genLocalCSS(){
 			$html	  = "";
 			
-			// Include the reset stylesheet.
-			$this->doc->addStyleSheet($this->container->tempurl . "/css/reset.css", "text/css");
-			
-			// Include the grid stylesheet (YUI library).
-			$grid	  = $this->container->path.DS."css".DS."grid.css";
-			if(JFile::exists($grid)){ $this->doc->addStyleSheet($this->container->tempurl . "/css/grid.css", "text/css"); }
-	
-			// Include the typography stylesheet.
-			if($this->container->typo != -1){ $this->doc->addStyleSheet($this->container->tempurl . "/css/" . $this->container->typo . ".css", "text/css"); }
-		
-			// Include the system message stylesheets.
-			switch ($this->container->sysmsg){
-				case 1:
-					$html .= $this->parseCSS($this->container->tempurl . "/css/messagefly.css");
-					break;
-				
-				case 2:
-					$html .= $this->parseCSS($this->container->tempurl . "/css/messagefb.css");
-					break;
-			}
-			
-			// Include the main template stylesheet
-			$skincss	 = $this->container->path.DS."css".DS."template.css";
-			$html		.= (JFile::exists($skincss)) ? $this->parseCSS($this->container->tempurl . "/css/template.css") : "";
-			
-			// Inlcude the component stylesheet
-			if($this->page == "component"){
-				$skincomcss	 = $this->container->path.DS."css".DS."component.css";
-				$html 		.= (JFile::exists($skincomcss)) ? $this->parseCSS($this->container->tempurl . "/css/component.css") : $this->parseCSS($this->container->tempurl . "/css/component.css");
-			}
-			
-			// Include the error stylesheet
-			if($this->page == "error"){
-				$skincomcss	 = $this->container->path.DS."css".DS."error.css";
-				$html 		.= (JFile::exists($skincomcss)) ? $this->parseCSS($this->container->tempurl . "/css/error.css") : $this->parseCSS($this->container->tempurl . "/css/error.css");
-			}
-			
-			// Include the page offlince stylesheet
-			if($this->page == "offline"){
-				$skincomcss	 = $this->container->path.DS."css".DS."offline.css";
-				$html 		.= (JFile::exists($skincomcss)) ? $this->parseCSS($this->container->tempurl . "/css/offline.css") : $this->parseCSS($this->container->tempurl . "/css/offline.css");
+			// Include all local stylesheets
+			foreach ($this->local_css as $css) {
+				$this->doc->addStyleSheet($this->container->tempurl . "/css/" . $css . ".css", "text/css");
 			}
 			
 			// Include a browser specific override stylesheet
@@ -184,10 +183,34 @@
 		function genRemoteCSS(){
 			$html	  = "";
 			
-			$filemtime = filemtime(dirname(__FILE__) . "/../css/pack.min.css");
-			// Include the reset, grid, typography, system message, template, component, error
-			// and browser specific stylesheets.
-			$this->doc->addStyleSheet($this->container->tempurl . "/css/pack.min.css?" . $filemtime, "text/css");
+			// If the remote list isn't specified, use the local one instead
+			if ($this->remote_css != "") {
+							
+				foreach($this->remote_css as $css) {
+					
+					// Get the modified time of the file.
+					$filemtime = filemtime(dirname(__FILE__) . "/../css/" . $css . ".css");
+					
+					$this->doc->addStyleSheet($this->container->tempurl . "/css/" . $css . ".css?" . $filemtime, "text/css");
+				}
+				
+			} else {
+				
+				foreach($this->local_css as $css) {
+					
+					// Get the modified time of the file.
+					$filemtime = filemtime(dirname(__FILE__) . "/../css/" . $css . ".css");
+					
+					$this->doc->addStyleSheet($this->container->tempurl . "/css/" . $css . ".css?" . $filemtime, "text/css");
+				}
+				
+			}
+			
+			
+			// Include a browser specific override stylesheet
+			$browsercss	 = $this->container->path.DS."css".DS.$this->container->browsercss;
+			$html		.= (JFile::exists($browsercss)) ? $this->parseCSS($this->container->tempurl . "/css/" . $this->container->browsercss) : "";
+			
 			return $html;
 		}
 		
@@ -221,30 +244,9 @@
 			
 			$html	 = "";
 			
-			// Parse Mootools library
-			$html .= $this->parseJS($this->container->baseurl . '/media/system/js/mootools-core.js');
-			$html .= $this->parseJS($this->container->baseurl . '/media/system/js/mootools-more.js');
-			
-			// Parse jQuery library
-			$html .= $this->parseJS("//ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.js");
-			//<script>!window.jQuery && document.write(unescape('%3Cscript src="http://exsrv.cti.gr/templates/excellence/js/libs/jquery-1.4.2.js"%3E%3C/script%3E'))</script>
-
-			
-			// $html .= $this->parseJS($this->container->tempurl . "/js/libs/cufon.js");
-			// $html .= $this->parseJS($this->container->tempurl . "/js/libs/bebas_400.font.js");
-			$frscript	= "";
-			$opt		= "";
-
-			$html .= $this->parseJS($this->container->tempurl . "/js/libs/sysmsgfly.js");
-
-			/*load all window.onload js*/
-			$script		 = 'function loadall(){ ';
-			$script		.= ($this->container->iemsg > 0 && $this->container->browsername == "ie" && ($this->container->iemsg == 1 || $this->container->iemsg == 3)) ? "popupfly('rumiiewarning');" : "";
-			if($this->container->sysmsg == 1){ $script	.= ($this->container->sysmsg == 1) ? "sysMsgFly();" : "sysMsgFb();"; }
-			$script		.= ' }; window.onload=function(){ loadall(); };';
-			$html		.= $this->parseJSDeclaration($script);
-			
-			$html .= $this->parseJS($this->container->tempurl . "/js/script.js");
+			foreach($this->local_js as $js) {
+				$html .= $this->parseJS($this->container->tempurl . "/js/" . $js . ".js");
+			}
 			
 			return $html;
 		}
@@ -260,11 +262,28 @@
 		
 			$html  = "";
 			
-			$filemtime = filemtime(dirname(__FILE__) . "/../js/plugins.min.js");
-			$html .= $this->parseJS($this->container->tempurl . "/js/plugins.min.js?" . $filemtime);
-			
-			$filemtime = filemtime(dirname(__FILE__) . "/../js/script.min.js");
-			$html .= $this->parseJS($this->container->tempurl . "/js/script.min.js?" . $filemtime);
+			// If the remote list isn't specified, use the local one instead
+			if ($this->remote_js != "") {
+
+				foreach($remote_js as $js) {
+					
+					// Get the modified time of the file.
+					$filemtime = filemtime(dirname(__FILE__) . "/../js/" . $js . ".js");
+					
+					$this->doc->addStyleSheet($this->container->tempurl . "/js/" . $js . ".js?" . $filemtime);
+				}
+				
+			} else {
+				
+				foreach($this->local_js as $js) {
+					
+					// Get the modified time of the file.
+					$filemtime = filemtime(dirname(__FILE__) . "/../js/" . $js . ".js");
+					
+					$this->doc->addStyleSheet($this->container->tempurl . "/js/" . $js . ".js?" . $filemtime);
+				}
+				
+			}
 			
 			return $html;
 		}

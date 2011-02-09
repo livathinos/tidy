@@ -1,16 +1,18 @@
 * Tidy Framework is a Joomla 1.6 frontend development framework which
   simplifies a two tier development architecture approach (local and remote).
-	
 
- Pack uses following functions for its two environments
 
 * USAGE
   ==========================================================================
+  In order to use the javascript call, one should copy the files mootools-core.js and
+  mootools-more.js from the <joomla_root_dir>/media/system/js folder into the template
+  javascript directory.
+
   On the index page of the template (<joomla_root_dir>/templates/<template_name>/index.php)
   following initializations are required:
 
   Require the inclusion of the framework file.
-  <?php require_once JPATH_SITE . DS . "templates" . DS . $this->template . DS . "libs/tidy" . DS . "pack.framework.php"; ?>
+  <?php require_once JPATH_SITE . DS . "templates" . DS . $this->template . DS . "libs/tidy" . DS . "tidy.framework.php"; ?>
  
   Initialize a new instance of the packBuilder class:
   <?php $packer = new packBuilder($this); ?>
